@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audcast</title>
+  <link rel="stylesheet" href="css/normalize-3.0.1.css" type="text/css" media="screen" charset="utf-8">
+  <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css" media="screen" charset="utf-8">
+  <style type="text/css" media="screen"> 
+  
+  @font-face {
+    font-family: 'Raleway';
+    font-style: normal;
+    font-weight: 100;
+    src: url(fonts/Raleway-Thin.ttf) format('truetype');
+  }
+  /*@font-face {
+    font-family: 'Raleway';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Raleway'), url(http://themes.googleusercontent.com/static/fonts/raleway/v7/bIcY3_3JNqUVRAQQRNVteQ.ttf) format('truetype');
+  }*/
+
+  #episodes, #feeds {
+    padding-left: 0;
+    padding-right: 0;
+    list-style-type: none;
+  }
+  
+  #episodes > li, #feeds > li {
+    margin: 1em 0;
+  }
+  
+  #episodes > li:before {
+    display: block;
+    margin: 0.5em auto;
+    width: 50%;
+    height: 1px;
+    background: #ccc;
+    content: "";
+  }
+  #episodes > li:first-child:before {
+    display: none;
+  }
+  
+  #logo {
+    font-family: Raleway;
+    font-weight: 100;
+    color: white;
+    padding-top: 35px;
+    margin-top: 0;
+    height: 47px;
+    border-bottom: none;
+    
+    background-image: -webkit-gradient(
+    	linear,
+    	left top,
+    	left bottom,
+    	color-stop(0, #8F1FA3),
+    	color-stop(1, #FF8931)
+    );
+    background-image: -o-linear-gradient(bottom, #8F1FA3 0%, #FF8931 100%);
+    background-image: -moz-linear-gradient(bottom, #8F1FA3 0%, #FF8931 100%);
+    background-image: -webkit-linear-gradient(bottom, #8F1FA3 0%, #FF8931 100%);
+    background-image: -ms-linear-gradient(bottom, #8F1FA3 0%, #FF8931 100%);
+    background-image: linear-gradient(to bottom, #8F1FA3 0%, #FF8931 100%);
+  }
+  
+  h1 { font-size: 2.5em; }
+  h2 { font-size: 2em; }
+  h3 { font-size: 1.5em; }
+  h4 { font-size: 1em; }
+  
+  h1, h2, h3, h4, h5 {
+    font-family: Raleway;
+    font-weight: 100;
+    border-bottom: 1px solid #8F1FA3;
+    color: #8F1FA3;
+  }
+  
+  footer {
+    margin-top: 2em;
+    padding-top: 45px;
+    text-align: center;
+    height: 37px;
+    
+    color: white;
+    font-family: Raleway;
+    
+    background-image: -webkit-gradient(
+    	linear,
+    	left top,
+    	left bottom,
+    	color-stop(0, #FF8A31),
+    	color-stop(1, #8F1FA3)
+    );
+    background-image: -o-linear-gradient(bottom, #FF8A31 0%, #8F1FA3 100%);
+    background-image: -moz-linear-gradient(bottom, #FF8A31 0%, #8F1FA3 100%);
+    background-image: -webkit-linear-gradient(bottom, #FF8A31 0%, #8F1FA3 100%);
+    background-image: -ms-linear-gradient(bottom, #FF8A31 0%, #8F1FA3 100%);
+    background-image: linear-gradient(to bottom, #FF8A31 0%, #8F1FA3 100%);
+  }
+  
+  footer a {
+    color: white;
+  }
+  
+  h1, h2, h3, h4, h5, #episodes, #storage, #feeds, #add-feed {
+    padding: 0 15px;
+    padding-bottom: 5px;
+  }
+  
+  #episodes > li a, #feeds > li a {
+    text-decoration: none;
+    color: #F57920;
+  }
+  
+  .duration {
+    font-size: 0.8em;
+    font-variant: small-caps;
+  }
+  
+  #storage {
+    text-align: center;
+  }
+  
+  #storage-bar {
+    width: 80%;
+    margin: 0 auto;
+    height: 15px;
+    background: #ccc;
+  }
+  
+  #storage-bar-filled {
+    height: 100%;
+    width: 65%;
+    background-color: #F57920;
+  }
+  
+  #feeds input[type="text"], #add-feed input[type="text"] {
+    border: none;
+    border-bottom: 1px solid #ccc;
+    border-left: 1px solid #ccc;
+    padding: 2px 5px;
+    margin: 10px 0;
+    width: 90%;
+    max-width: 40em;
+    font-family: monospace;
+    box-sizing: border-box;
+  }
+  
+/*  .loading-indicator .fa {
+    margin: 0 auto;
+    display: block;
+    font-size: 2.5em;
+  }
+*/ 
+    .loading-indicator { text-align: center;}
+    
+
+   </style>
+</head>
+<body>
+  <h1 id="logo">Audcast</h1>
+  <!-- <h2>Now playing</h2>
+  <div id="now-playing">
+    <div class="loading-indicator"><i class="fa fa-cog fa-spin fa-3x"></i></div>
+  </div> -->
+  <h2>Episodes loaded</h2>
+  <ol id="episodes">
+      <li>
+        <a href="#">#75: Kindness of Strangers</a> <span class="duration">4m35s</span><br>
+        <a href="#feed-this-american-life">This American Life</a> &bull; posted 6/2/2014<br>
+        <p>Stories of the kindness of strangers and where it leads. Also, the unkindness of strangers and where that can lead. All of today's stories take place in the city most people think of as the least kind city in America: New York.</p>
+    </li>
+    <li>
+      <a href="#">Things</a> <span class="duration">4m35s</span><br>
+      <a href="#feed-radiolab">Radiolab from WNYC</a> &bull; posted 5/30/2014<br>
+      <p>This hour we investigate the objects around us, their power to move us, and whether it's better to look back or move on, hold on tight or just let go.</p>
+    </li>
+  </ol>
+  <h3>Storage status</h3>
+  <div id="storage">
+    <div id="storage-bar">
+      <div id="storage-bar-filled"></div>
+    </div>
+    <p>5 episodes &bull; 40 minutes &bull; 30.5 megabytes</p>
+  </div>
+  <h2>Podcast feeds</h2>
+  <ul id="feeds">
+    <li>
+      <a href="http://www.thisamericanlife.org">This American Life</a><br>
+      <input type="text" value="http://feeds.thisamericanlife.org/talpodcast" placeholder="Podcast URL (RSS)"><br>
+      last updated: 5/30/2014 at 8 p.m. <a href="#"><span class="fa fa-refresh"></span> update now</a>
+    </li>
+    <li>
+      <a href="http://www.radiolab.org/series/podcasts/">Radiolab from WNYC</a><br>
+      <input type="text" value="http://feeds.wnyc.org/radiolab" placeholder="Podcast URL (RSS)"><br>
+      last updated: 5/29/2014 at 1 p.m. <a href="#">update now</a>
+    </li>
+  </ul>
+  <h3>Add a podcast feed</h3>
+  <div id="add-feed">
+    <p>Podcast feeds are easily browsable within iTunes, but you will need a different &ldquo;RSS&rdquo; or &ldquo;Feed&rdquo; link to add them to Audcast. This link is generally found on the podcast's website, and can be copied by right-clicking and choosing &ldquo;Copy Link Address&rdquo;.</p>
+    <form action="." method="POST">
+      <input type="text" placeholder="type a URL like http://example.com/feeds/podcast"></input>
+      <input type="submit" name="submit" value="Add feed" id="submit">
+    </form>
+  </div>
+  <footer>
+    created by <a href="http://joseph-long.com/">Joseph Long</a>
+  </footer>
+</body>
+</html>
