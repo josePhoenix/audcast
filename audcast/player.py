@@ -1,9 +1,18 @@
 import time
+import errno
 import Queue
-import threading
+import multiprocessing
+import subprocess
 from pprint import pprint
+
+from audcast.config import settings
+import logging
+log = logging.getLogger(__name__)
+
 from audcast.buttons import buttons
-from audcast.database import db_session
+from audcast.database import Session
+from audcast.models import Episode
+
 
 ## Messages
 
@@ -25,6 +34,17 @@ class State(object):
     def __init__(self, player):
         # debug_state_history.append(self.__class__.__name__)
         self.player = player
+    def enter(self):
+        """
+        Subclasses may implement this to trigger certain behavior upon
+        the player entering this state
+        """
+
+    def exit(self):
+        """
+        Subclasses may implement this to trigger certain behavior upon
+        the player exiting this state
+        """
 
     def dispatch(self, event):
         raise NotImplementedError("Your state subclass must implement the "
@@ -32,12 +52,13 @@ class State(object):
 
 class Asleep(State):
     def dispatch(self, event):
-        self.player.state = ResumeIfPossible(self.player)
-
+        self.player.set_state(ResumeIfPossible)
 
 class ResumeIfPossible(State):
     def __init__(self, player):
         super(ResumeIfPossible, self).__init__(player)
+
+    def enter(self):
         if self.player.now_playing is not None:
             speech = MESSAGE_RESUME.format(
                 title=now_playing.title,
@@ -45,21 +66,32 @@ class ResumeIfPossible(State):
             )
             self.player.speak(speech)
         else:
-            self.player.state = ListIntro(self.player)
+            self.player.set_state(ListIntro)
 
     def dispatch(self, event):
         if event:
             if event.body['button'] == BUTTON_PLAY:
-                self.player.state = Playing(self.player)
+                self.player.set_state(Playing)
             else:
-                self.player.state = ListIntro(self.player)
+                self.player.set_state(ListIntro)
 
 class ListIntro(State):
-    def __init__(self, player):
-        super(ListIntro, self).__init__(player)
-        speech = MESSAGE_LISTINFO.format(count=player.episode_count())
+    def enter(self):
+        speech = MESSAGE_LISTINTRO.format(count=self.player.episode_count())
         self.player.speak(speech, block=True)
-        self.player.state = ListItem(self.player)
+        self.player.set_state(ListItem)
+
+class ListItem(State):
+    def __init__(self, *args, **kwargs):
+        super(ListItem, self).__init__(*args, **kwargs)
+        self.tick_count = 0
+    def enter(self):
+        self.player.speak("Press the green play button to hear Episode Title Here", block=True)
+    def dispatch(self, event):
+        event_type, event_data = event
+        if event_type == 'tick':
+            self.tick_count += 1
+            # TODO: progress to next ListItem
 
 # Speech
 
@@ -72,7 +104,7 @@ class SpeechRequest(object):
         self.msg = msg
         self.ref = None
     def play(self):
-        self.ref = subprocess.Popen(('speak', self.msg)) # TODO: switch back to flite for linux
+        self.ref = subprocess.Popen((settings['speech.helper'], self.msg))
     def wait(self):
         if self.ref is None:
             return
@@ -80,7 +112,14 @@ class SpeechRequest(object):
             time.sleep(0.2)
     def stop(self):
         if self.ref:
-            self.ref.terminate()
+            try:
+                self.ref.terminate()
+            except OSError as e:
+                if e.errno == errno.ESRCH:
+                    pass # race condition where pid might be cleaned up before
+                         # we try to kill it
+                else:
+                    raise
     def status(self):
         if self.ref is None:
             return SpeechRequest.NOT_STARTED
@@ -91,7 +130,7 @@ class SpeechRequest(object):
                 return SpeechRequest.COMPLETED
     @classmethod
     def test(cls):
-        a = cls("Hello, user. Please select an action to continue.")
+        a = cls("Hello Mr. User. Please select an action to continue.")
         a.play()
         print "Playing..."
         a.wait()
@@ -99,61 +138,45 @@ class SpeechRequest(object):
 
 # Player Thread & Event Loop
 
-class Player(threading.Thread):
+class Player(multiprocessing.Process):
     def __init__(self):
         self.running = True
         self._current_speech = None
         self.now_playing = None
         super(Player, self).__init__()
         
-        self.state = Asleep(self)
-        self.event_queue = Queue.Queue()
-    
-    def speak(self, message):
+        self._state = Asleep(self)
+        self.event_queue = multiprocessing.Queue()
+
+    def speak(self, message, block=False):
         if self._current_speech is not None:
             self._current_speech.stop()
         self._current_speech = SpeechRequest(message)
         self._current_speech.play()
+        if block:
+            self._current_speech.wait()
+
+    def set_state(self, state_class):
+        self._state.exit()
+        self._state = state_class(self)
+        self._state.enter()
+
+    def dispatch(self, event):
+        if event[0] == 'quit':
+            self.running = False
+        else:
+            self._state.dispatch(event)
+
+    def episode_count(self):
+        return Episode.query.count()
     
     def run(self):
         while self.running:
             try:
                 event = self.event_queue.get(block=True, timeout=1.0)
-                self.state.dispatch(event)
-                event_queue.task_done()
+                self.dispatch(event)
             except Queue.Empty:
                 pass # try again for another second
                      # (prevents waiting forever on quit for a blocking get())
-            
-
-# player_thread = Player()
-# 
-# def button_handler(channel):
-#     event_queue.put(channel)
-# 
-# if __name__ == '__main__':
-#     player_thread.start()
-#     
-#     input_txt = ''
-#     while input_txt != 'q':
-#         if input_txt == 'e':
-#             button_handler(buttons.ESCAPE)
-#         elif input_txt == 'p':
-#             button_handler(buttons.PREVIOUS)
-#         elif input_txt == '.':
-#             button_handler(buttons.PLAYPAUSE)
-#         elif input_txt == 'n':
-#             button_handler(buttons.NEXT)
-#         pprint(debug_state_history)
-#         print
-#         print '[e] escape'
-#         print '[p] previous'
-#         print '[.] play/pause'
-#         print '[n] next'
-#         input_txt = raw_input('> ')
-#     
-#     print 'quitting...'
-#     player_thread.running = False
-#     event_queue.join()
-#     print 'player_thread.running', player_thread.running
-#     player_thread.join()
+        # clean up SQLAlchemy connection
+        Session.bind.dispose()

@@ -29,7 +29,9 @@ class Feed(Base):
 
     def __init__(self, url):
         self.url = url
-        feed_content = feedparser.parse(url)
+
+    def update(self):
+        feed_content = feedparser.parse(self.url)
         self.name = feed_content['feed']['title']
 
     def __repr__(self):

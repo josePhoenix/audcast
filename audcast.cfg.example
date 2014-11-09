@@ -1,0 +1,8 @@
+[log]
+level = DEBUG
+
+[database]
+path = /Users/jdl/dev/audcast/audcast.sqlite3
+
+[speech]
+helper = say

@@ -1,14 +1,14 @@
 from audcast.player import Player
 from audcast.buttons import buttons
 
-player_thread = Player()
+player_process = Player()
 
 def button_handler(channel):
-    player_thread.event_queue.put(channel)
+    player_process.event_queue.put(('button', channel))
 
 if __name__ == '__main__':
-    player_thread.start()
-    # buttons.initialize(callback=button_handler)
+    player_process.start()
+
     input_txt = ''
     while input_txt != 'q':
         if input_txt == 'e':
@@ -19,14 +19,16 @@ if __name__ == '__main__':
             button_handler(buttons.PLAYPAUSE)
         elif input_txt == 'n':
             button_handler(buttons.NEXT)
+        elif input_txt == 't':
+            player_process.event_queue.put(('tick', None))
         print
         print '[e] escape'
         print '[p] previous'
         print '[.] play/pause'
         print '[n] next'
+        print '[t] tick'
         input_txt = raw_input('> ')
     
     print 'quitting...'
-    player_thread.running = False
-    print 'player_thread.running', player_thread.running
-    player_thread.join()
+    player_process.event_queue.put(('quit', None))
+    player_process.join()
